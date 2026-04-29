@@ -4,22 +4,40 @@ import { formatDateTime } from "../../utils/formatTime";
 
 export default function TeamAttendance() {
   const { data, isLoading, error, refetch } = useGetMyAttendanceQuery();
+
   const [remarks, setRemarks] = useState({});
+  const [loadingId, setLoadingId] = useState(null);
 
   const handleValidate = async (id, status) => {
-    await fetch(`http://localhost:5000/api/attendance/validate/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        status,
-        remarks: remarks[id] || "",
-      }),
-    });
+    try {
+      setLoadingId(id);
 
-    refetch();
+      const API_URL = import.meta.env.VITE_API_URL;
+
+      const res = await fetch(`${API_URL}/attendance/validate/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          status,
+          remarks: remarks[id] || "",
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update");
+      }
+
+      alert("Updated successfully ✅");
+      refetch();
+    } catch (err) {
+      console.error(err);
+      alert("Error updating attendance ❌");
+    } finally {
+      setLoadingId(null);
+    }
   };
 
   if (isLoading)
@@ -30,11 +48,11 @@ export default function TeamAttendance() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-2xl font-bold mb-4">
+      <h1 className="text-2xl font-bold mb-6">
         Manager - Team Attendance
       </h1>
 
-      <div className="grid gap-4">
+      <div className="grid gap-5">
         {data?.map((a) => (
           <div
             key={a._id}
@@ -66,17 +84,20 @@ export default function TeamAttendance() {
               </span>
             </p>
 
+            {/* SELFIE */}
             {a.selfie && (
               <img
                 src={a.selfie}
-                className="w-32 mt-2 rounded"
+                alt="selfie"
+                className="w-32 mt-2 rounded border"
               />
             )}
 
             <p className="mt-2">
-              Validation: {a.validationStatus}
+              <b>Validation:</b> {a.validationStatus}
             </p>
 
+            {/* REMARK INPUT */}
             <input
               className="border p-2 mt-2 w-full rounded"
               placeholder="Add remarks"
@@ -89,23 +110,22 @@ export default function TeamAttendance() {
               }
             />
 
-            <div className="flex gap-2 mt-3">
+            {/* ACTION BUTTONS */}
+            <div className="flex gap-3 mt-4">
               <button
-                onClick={() =>
-                  handleValidate(a._id, "valid")
-                }
-                className="bg-green-500 text-white px-4 py-1 rounded"
+                disabled={loadingId === a._id}
+                onClick={() => handleValidate(a._id, "valid")}
+                className="bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded disabled:opacity-50"
               >
-                Approve
+                {loadingId === a._id ? "Processing..." : "Approve"}
               </button>
 
               <button
-                onClick={() =>
-                  handleValidate(a._id, "invalid")
-                }
-                className="bg-red-500 text-white px-4 py-1 rounded"
+                disabled={loadingId === a._id}
+                onClick={() => handleValidate(a._id, "invalid")}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded disabled:opacity-50"
               >
-                Reject
+                {loadingId === a._id ? "Processing..." : "Reject"}
               </button>
             </div>
           </div>
