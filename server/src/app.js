@@ -21,4 +21,18 @@ app.use("/api/attendance", require("./routes/attendanceRoutes"));
 app.use("/api/overtime", require("./routes/overtimeRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "Attendance Management Backend Running 🚀",
+  });
+});
+
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Backend is healthy 🚀",
+  });
+});
+
 module.exports = app;
